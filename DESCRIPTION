@@ -1,0 +1,21 @@
+Package: adms_tools
+Title: Functions to work with ADMS data
+Version: 0.1
+Date: 2022-09-29
+Authors@R: 
+    person(given = "Tilman Leo",
+           family = "Hohenberger",
+           role = c("aut", "cre"),
+           email = "tlh@ust.hk",
+           comment = c(ORCID = "0000-0002-4372-8750"))
+Description: Functions that help with ADMS data
+URL: https://github.com/tlhenvironment/adms_tools
+Imports:
+    sf, terra, dplyr, data.table, lubridate, glue, ncdf4
+Suggests:
+License: GPL (>= 2)
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.0.2
+VignetteBuilder: knitr
