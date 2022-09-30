@@ -1,4 +1,4 @@
-# buffeRs
+# adms_tools
 adms_tools has multiple functions to help working with ADMS data
 currently just for internal use
 
