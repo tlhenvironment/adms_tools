@@ -15,14 +15,14 @@
 # ' plot(circular_buffer)
 # ' @export
 
-adms_path <- function(datetime, version, basedir = "/home/dataop/data/nmodel/adms"){
+adms_path <- function(datetime, adms_version, basedir = "/home/dataop/data/nmodel/adms"){
 
     yyyy = lubridate::year(datetime)
     yyyymm = paste0(yyyy, stringr::str_pad(lubridate::month(datetime), 2, pad = "0"))
     yyyymmdd = paste0(yyyymm, stringr::str_pad(lubridate::day(datetime), 2, pad = "0"))
     yyyymmddhh = paste0(yyyymmdd, stringr::str_pad(lubridate::hour(datetime), 2, pad = "0"))
 
-    path = paste0(basedir, '/', version, "/fcstout.archive/",
+    path = paste0(basedir, '/', adms_version, "/fcstout.archive/",
         yyyy, "/", yyyymm, "/", yyyymmdd, "/", yyyymmddhh, ".nc")
 
     if(!file.exists(path)) stop("ADMS file does not exist: {path}" |> glue::glue())

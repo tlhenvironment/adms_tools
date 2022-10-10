@@ -1,36 +1,29 @@
-#' Reads in ADMS result to shapefile
+#' Reads in ADMS result to dataframe
 #'
-#' Reads in ADMS result (from .nc file) and outputs a shapefile
-#' @param base_folder (character) Basefolder of ADMS results. Default is "/home/dataop/data/nmodel/adms"
-#' @param adms_points_path (character) Path to the shapefile of ADMS points.
+#' Reads in ADMS result (from .nc file) and outputs a dataframe
 #' @param datetime (POSIXct) Datetime argument.
 #' @param adms_version  (character) e.g. "hkv20b"
 #' @param pollutants  (character vector) e.g. c("PM10", "O3"), can be all variables of the .nc file
-#' @return An object of class \code{sfc_multipoint} or \code{NA}
-#' @keywords adms shapefile
+#' @param base_folder (character) Basefolder of ADMS results. Default is "/home/dataop/data/nmodel/adms"
+#' @param adms_points_path (character) Path to the shapefile of ADMS points.
+#' @return An object of class \code{data.frame}
+#' @keywords adms 
 #' @export
 # ' @examples 
-# ' example_point = sf::st_point(c(1,2))
-# ' example_point = sf::st_sfc(example_point)
-# ' example_point = sf::st_sf(example_point)
-# ' 
-# ' buffer_circle(example_point, 200) -> circular_buffer
-# ' plot(circular_buffer)
+# ' datetime = lubridate::ymd_h("2021-09-09-17")
+# ' adms_df = read_adms(datetime)
 # ' @export
 
-read_adms(
-    base_folder = "/home/dataop/data/nmodel/adms",
-    adms_points_path = "/disk/v092.user/tlh/colleagues/jimmy_chan/adms_to_raster/data/lnglat_no_receptors/lnglat_no_receptors_hk_80.shp",
+read_adms = function(
     datetime,
-    adms_version,
-    pollutants = c("PM10", "NO2", "O3")
-){
+    adms_version = "hkv20b",
+    pollutants = c("PM10", "PM2.5", "NO2", "O3", "SO2"),
+    base_folder = "/home/dataop/data/nmodel/adms")
+    {
     
     message(datetime)
 
-    if(is.character(path)){} else{
-        path = adms_path(datetime, version)
-    }
+    path = adms_path(datetime, adms_version)
 
     message(path)
     if (file.exists(path) == F){message("FILE NOT FOUND: ", path); return(NA)}
@@ -54,3 +47,142 @@ read_adms(
 
     results_df
 }
+
+#' Reads in the shapefile that has the information where ADMS output points are located
+#'
+#' Reads in ADMS result (from .nc file) and outputs a dataframe
+#' @param adms_points_path (character) Path to the shapefile of ADMS points.
+#' @return Returns nothing, but sets 'adms_shp_dummy' as a \code{sf} object in the global environment
+#' @export
+# ' @examples 
+# ' read_adms_poins()
+# ' @export
+read_adms_poins <- function(
+    adms_points_path = "/disk/v092.user/tlh/colleagues/jimmy_chan/adms_to_raster/data/lnglat_no_receptors/lnglat_no_receptors_hk_80.shp")
+{
+    #load dummy points
+    if(!exists('adms_shp_dummy')){
+      adms_shp_dummy <<- sf::st_read(adms_points_path)
+    }
+}
+
+#' Reads in ADMS result to shapefile
+#'
+#' Reads in ADMS result (from .nc file) and outputs a dataframe
+#' @param datetime (POSIXct) Datetime argument.
+#' @param adms_version  (character) e.g. "hkv20b"
+#' @param pollutants  (character vector) e.g. c("PM10", "O3"), can be all variables of the .nc file
+#' @param base_folder (character) Basefolder of ADMS results. Default is "/home/dataop/data/nmodel/adms"
+#' @param adms_points_path (character) Path to the shapefile of ADMS points.
+#' @return An object of class \code{sf}
+#' @keywords adms 
+#' @export
+# ' @examples 
+# ' datetime = lubridate::ymd_h("2021-09-09-17")
+# ' adms_df = read_adms_shp(datetime)
+# ' @export
+read_adms_shp <- function(
+    datetime,
+    adms_version = "hkv20b",
+    pollutants = c("PM10", "PM2.5", "NO2", "O3", "SO2"),
+    base_folder = "/home/dataop/data/nmodel/adms",
+    adms_points_path = "/disk/v092.user/tlh/colleagues/jimmy_chan/adms_to_raster/data/lnglat_no_receptors/lnglat_no_receptors_hk_80.shp")
+{
+    #read in df
+    adms_df = read_adms(datetime, adms_version, pollutants, base_folder)
+
+    #stop condition
+    if(class(adms_df) != "data.frame" && is.na(adms_df)) "Could not read in {datetime}" |> glue::glue() |> stop()
+
+    #load dummy points
+    if(!exists('adms_shp_dummy')){
+      read_adms_poins(adms_points_path)
+    }
+
+    #prepare for merging
+    adms_shp_dummy_merge <- adms_shp_dummy
+    adms_shp_dummy_merge$point <- adms_shp_dummy_merge$FID + 1
+    adms_shp_dummy_merge <- adms_shp_dummy_merge |> dplyr::select(-FID)
+
+    #merge
+    if(isTRUE(all.equal(adms_shp_dummy_merge$point, adms_df$point))){
+        adms_shp_dummy_merge <- adms_shp_dummy_merge |> dplyr::select(-point)
+        adms_shp = cbind(adms_shp_dummy_merge, adms_df)
+    } else {
+        adms_shp = dplyr::right_join(adms_shp_dummy_merge, adms_df, by = "point")    
+    }
+
+    adms_shp
+}
+
+#' Reads in ADMS result to shapefile
+#'
+#' Reads in ADMS result (from .nc file) and outputs a dataframe
+#' @param datetime (POSIXct) Datetime argument.
+#' @param resolution (numeric) Resolution of raster (in m).
+#' @param adms_version  (character) e.g. "hkv20b"
+#' @param pollutants  (character vector) e.g. c("PM10", "O3"), can be all variables of the .nc file
+#' @param base_folder (character) Basefolder of ADMS results. Default is "/home/dataop/data/nmodel/adms"
+#' @param adms_points_path (character) Path to the shapefile of ADMS points.
+#' @param cores (numeric) Number of cores for rasterization. Default is one core per pollutant.
+#' @return An object of class \code{sf}
+#' @keywords adms 
+#' @export
+# ' @examples 
+# ' datetime = lubridate::ymd_h("2021-09-09-17")
+# ' adms_df = read_adms_raster(datetime, resolution = 20)
+# ' @export
+read_adms_raster <- function(
+    datetime,
+    resolution,
+    adms_version = "hkv20b",
+    pollutants = c("PM10", "PM2.5", "NO2", "O3", "SO2"),
+    base_folder = "/home/dataop/data/nmodel/adms",
+    adms_points_path = "/disk/v092.user/tlh/colleagues/jimmy_chan/adms_to_raster/data/lnglat_no_receptors/lnglat_no_receptors_hk_80.shp",
+    cores = length(pollutants))  
+{
+    #read in shp
+    adms_shp = read_adms_shp(datetime, adms_version, pollutants, base_folder, adms_points_path)
+
+    #stop condition
+    if(class(adms_shp)[1] != "sf" && is.na(adms_shp)) "Could not read in {datetime}" |> glue::glue() |> stop()
+
+    adms_vect = terra::vect(adms_shp)
+    dummy_rast = terra::rast(adms_vect, resolution = resolution)
+
+    #rasterize, wrap because of parallel
+    parallel::mclapply(pollutants, mc.cores = cores, FUN = function(pollutant){
+        adms_rast = terra::rasterize(adms_vect, dummy_rast, field = pollutant, fun = mean, na.rm = T)
+        terra::wrap(adms_rast)
+    }) -> adms_raster_list
+
+    #unwrap
+    lapply(adms_raster_list, terra::rast) -> adms_raster_list
+
+    do.call(c, adms_raster_list) -> adms_raster_combined
+    names(adms_raster_combined) <- pollutants
+
+    #will do interplation later
+    #interpolation loop, runs until all NA values are interpolated
+    # while(any(values(adms_rast) |> is.na() |> as.vector() == TRUE)){
+    #     values(adms_rast) |> is.na() |> table() |> print()
+    #     adms_rast <- terra::focal(adms_rast, w = matrix(1, 5, 5), fun = fill.na, na.only=T, na.rm = F)
+    #     print('hi')
+    # }
+    
+}
+
+fill.na <- function(x) {
+
+  i <- (length(x) +1 ) / 2
+
+
+  if( is.na(x)[i] ) {
+    return( round(mean(x, na.rm=TRUE),4) )
+  } else {
+    return( round(x[i],0) )
+  }
+}
+
+
+# terra::writeCDF(adms_rast, filename = "/disk/scratch/tlh/aaa.nc", compression= 9, overwrite = T)
