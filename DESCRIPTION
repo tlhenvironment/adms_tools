@@ -11,7 +11,7 @@ Authors@R:
 Description: Functions that help with ADMS data
 URL: https://github.com/tlhenvironment/adms_tools
 Imports:
-    sf, terra, dplyr, data.table, lubridate, glue, ncdf4
+    sf, terra, dplyr, data.table, lubridate, glue, ncdf4, stringr
 Suggests:
 License: GPL (>= 2)
 Encoding: UTF-8

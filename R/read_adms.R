@@ -15,22 +15,30 @@
 # ' @export
 
 read_adms = function(
-    datetime,
-    adms_version = "hkv20b",
+    datetime = NULL,
     pollutants = c("PM10", "PM2.5", "NO2", "O3", "SO2"),
-    base_folder = "/home/dataop/data/nmodel/adms")
+    adms_version = "hkv20b",
+    base_folder = "/home/dataop/data/nmodel/adms",
+    full_path = NULL)
     {
-    
+    #check for path
     message(datetime)
-
-    path = adms_path(datetime, adms_version)
+    if(is.null(datetime) & is.null(full_path)){
+        stop("Provide either datetime or a full path")
+    }
+    
+    if(is.character(full_path)){
+        path = full_path
+    } else {
+        path = adms_path(datetime, adms_version)
+    }
 
     message(path)
     if (file.exists(path) == F){message("FILE NOT FOUND: ", path); return(NA)}
 
     #open nc file
     ncdf4::nc_open(path) -> nc_adms
-
+browser()
     #read in data
     #find max dim
     #max_count = nc_adms$dim |> unlist() |> as.numeric() |> max(na.rm = T)
@@ -39,6 +47,8 @@ read_adms = function(
     lapply(pollutants, function(pollutant){
         ncdf4::ncvar_get(nc_adms, varid = pollutant, start = 1, count = max_count) |> as.data.frame()
     }) -> results_list
+
+    ncdf4::nc_close(nc_adms)
 
     do.call(cbind, results_list) -> results_df
     names(results_df) <- pollutants
@@ -89,7 +99,7 @@ read_adms_shp <- function(
     adms_points_path = "/disk/v092.user/tlh/colleagues/jimmy_chan/adms_to_raster/data/lnglat_no_receptors/lnglat_no_receptors_hk_80.shp")
 {
     #read in df
-    adms_df = read_adms(datetime, adms_version, pollutants, base_folder)
+    adms_df <- read_adms(datetime, adms_version, pollutants, base_folder)
 
     #stop condition
     if(class(adms_df) != "data.frame" && is.na(adms_df)) "Could not read in {datetime}" |> glue::glue() |> stop()
@@ -162,6 +172,7 @@ read_adms_raster <- function(
     do.call(c, adms_raster_list) -> adms_raster_combined
     names(adms_raster_combined) <- pollutants
 
+    adms_raster_combined
     #will do interplation later
     #interpolation loop, runs until all NA values are interpolated
     # while(any(values(adms_rast) |> is.na() |> as.vector() == TRUE)){
@@ -186,3 +197,4 @@ fill.na <- function(x) {
 
 
 # terra::writeCDF(adms_rast, filename = "/disk/scratch/tlh/aaa.nc", compression= 9, overwrite = T)
+

@@ -5,18 +5,19 @@
 \title{Reads in ADMS result to dataframe}
 \usage{
 read_adms(
-  datetime,
-  adms_version = "hkv20b",
+  datetime = NULL,
   pollutants = c("PM10", "PM2.5", "NO2", "O3", "SO2"),
-  base_folder = "/home/dataop/data/nmodel/adms"
+  adms_version = "hkv20b",
+  base_folder = "/home/dataop/data/nmodel/adms",
+  full_path = NULL
 )
 }
 \arguments{
 \item{datetime}{(POSIXct) Datetime argument.}
 
-\item{adms_version}{(character) e.g. "hkv20b"}
-
 \item{pollutants}{(character vector) e.g. c("PM10", "O3"), can be all variables of the .nc file}
+
+\item{adms_version}{(character) e.g. "hkv20b"}
 
 \item{base_folder}{(character) Basefolder of ADMS results. Default is "/home/dataop/data/nmodel/adms"}
 
