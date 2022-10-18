@@ -38,11 +38,12 @@ read_adms = function(
 
     #open nc file
     ncdf4::nc_open(path) -> nc_adms
-browser()
+    nc_adms$dim |> unlist()
+
     #read in data
     #find max dim
-    #max_count = nc_adms$dim |> unlist() |> as.numeric() |> max(na.rm = T)
-    max_count = 1203695
+    # max_count = 1203695
+    max_count = nc_adms$dim[[1]]$len
 
     lapply(pollutants, function(pollutant){
         ncdf4::ncvar_get(nc_adms, varid = pollutant, start = 1, count = max_count) |> as.data.frame()
@@ -73,6 +74,7 @@ read_adms_poins <- function(
     #load dummy points
     if(!exists('adms_shp_dummy')){
       adms_shp_dummy <<- sf::st_read(adms_points_path)
+      "Created variable: adms_shp_dummy" |> message()
     }
 }
 
